@@ -119,6 +119,12 @@ canvas {
   line-height: 2.2;
 }
 
+.lives-display {
+  font-size: 2.5rem;
+  letter-spacing: 8px;
+  margin-bottom: 0.5rem;
+}
+
 .unlock-msg {
   font-family: 'Fredoka One', cursive;
   color: #ffd700;

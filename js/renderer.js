@@ -1,3 +1,15 @@
+function drawHeart(ctx, x, y, size) {
+  ctx.save();
+  ctx.beginPath();
+  ctx.moveTo(x, y + size * 0.3);
+  ctx.bezierCurveTo(x, y, x - size, y, x - size, y + size * 0.3);
+  ctx.bezierCurveTo(x - size, y + size * 0.7, x, y + size * 1.1, x, y + size * 1.3);
+  ctx.bezierCurveTo(x, y + size * 1.1, x + size, y + size * 0.7, x + size, y + size * 0.3);
+  ctx.bezierCurveTo(x + size, y, x, y, x, y + size * 0.3);
+  ctx.fill();
+  ctx.restore();
+}
+
 // Starfield - generated once, drawn every frame
 let stars = null;
 
@@ -178,6 +190,14 @@ export function drawHUD(ctx, game) {
   ctx.font = "bold 16px 'Fredoka One', cursive";
   ctx.textAlign = 'left';
   ctx.fillText('N\u00EDvel ' + currentLevel, padding, padding + 10);
+
+  // Lives (hearts next to level)
+  ctx.font = '14px system-ui';
+  const livesX = padding + 75;
+  for (let i = 0; i < game.maxLives; i++) {
+    ctx.fillStyle = i < game.lives ? '#ff4d5a' : 'rgba(255,255,255,0.2)';
+    drawHeart(ctx, livesX + i * 18, padding + 4, 7);
+  }
 
   // Timer (top right)
   const timeLeft = Math.max(0, Math.ceil(levelTimer));

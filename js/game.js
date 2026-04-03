@@ -12,6 +12,7 @@ export const State = {
   TITLE: 'title',
   PLAYING: 'playing',
   LEVEL_COMPLETE: 'levelComplete',
+  LOST_LIFE: 'lostLife',
   GAME_OVER: 'gameOver',
   VICTORY: 'victory',
   PAUSED: 'paused'
@@ -33,6 +34,8 @@ export class Game {
     this.levelConfig = null;
     this.levelTimer = 0;
     this.levelStats = { mounted: 0, shaken: 0 };
+    this.lives = 3;
+    this.maxLives = 3;
 
     this.input = new Input(canvas);
     this.particles = new ParticleSystem();
@@ -101,6 +104,7 @@ export class Game {
         this.ui.showLevelComplete(); this.audio.playLevelComplete();
         this.particles.emitLevelComplete(this.canvas.width / 2, this.canvas.height / 2);
       }
+      if (this.state === State.LOST_LIFE) { this.ui.showLostLife(); this.audio.playGameOver(); }
       if (this.state === State.GAME_OVER) { this.ui.showGameOver(); this.audio.playGameOver(); }
       if (this.state === State.VICTORY) {
         this.ui.showVictory(); this.audio.playVictory();
@@ -183,9 +187,14 @@ export class Game {
       this.enemies = this.enemies.filter(e => !e.dead);
       this.particles.update(dt);
 
-      // Check game over
+      // Check if truck stopped
       if (!this.truck.alive) {
-        this.state = State.GAME_OVER;
+        this.lives--;
+        if (this.lives <= 0) {
+          this.state = State.GAME_OVER;
+        } else {
+          this.state = State.LOST_LIFE;
+        }
       }
     }
 

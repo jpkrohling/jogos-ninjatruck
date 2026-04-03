@@ -49,6 +49,7 @@ export class UI {
       btn.addEventListener('click', () => {
         this.game.audio.init();
         this.game.selectedTheme = key;
+        this.game.lives = this.game.maxLives;
         this.hide();
         this.game.startLevel(1);
       });
@@ -90,11 +91,34 @@ export class UI {
     this.show();
   }
 
+  showLostLife() {
+    this.clearOverlay();
+    const screen = this.createEl('div', 'screen');
+
+    screen.appendChild(this.createEl('h1', null, 'Os inimigos pararam o truck!'));
+
+    const livesDiv = this.createEl('div', 'stats');
+    const heartsText = '\u2764\uFE0F'.repeat(this.game.lives) + '\u{1F5A4}'.repeat(this.game.maxLives - this.game.lives);
+    livesDiv.appendChild(this.createEl('p', 'lives-display', heartsText));
+    livesDiv.appendChild(this.createEl('p', null, 'Voc\u00EA ainda tem ' + this.game.lives + (this.game.lives === 1 ? ' chance!' : ' chances!')));
+    screen.appendChild(livesDiv);
+
+    const btn = this.createEl('button', 'action-btn', 'Tentar de novo');
+    btn.addEventListener('click', () => {
+      this.hide();
+      this.game.startLevel(this.game.currentLevel);
+    });
+    screen.appendChild(btn);
+
+    this.overlay.appendChild(screen);
+    this.show();
+  }
+
   showGameOver() {
     this.clearOverlay();
     const screen = this.createEl('div', 'screen');
 
-    screen.appendChild(this.createEl('h1', null, 'Os inimigos dominaram o truck!'));
+    screen.appendChild(this.createEl('h1', null, 'Acabaram as chances!'));
 
     const statsDiv = this.createEl('div', 'stats');
     statsDiv.appendChild(this.createEl('p', null, 'Voc\u00EA chegou at\u00E9 o n\u00EDvel ' + this.game.currentLevel));
@@ -102,9 +126,10 @@ export class UI {
     statsDiv.appendChild(this.createEl('p', null, 'Inimigos sacudidos: ' + this.game.levelStats.shaken));
     screen.appendChild(statsDiv);
 
-    const btn = this.createEl('button', 'action-btn', 'Tentar de novo');
+    const btn = this.createEl('button', 'action-btn', 'Jogar de novo');
     btn.addEventListener('click', () => {
       this.hide();
+      this.game.lives = this.game.maxLives;
       this.game.startLevel(1);
     });
     screen.appendChild(btn);
