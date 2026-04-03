@@ -3,7 +3,7 @@ import { Enemy, EnemyState } from './enemy.js';
 import { themes } from './themes.js';
 import { getLevel, levels } from './level.js';
 import { Input } from './input.js';
-import { drawHUD, drawPaused, drawArena } from './renderer.js';
+import { drawHUD, drawPaused, drawArena, drawBackground } from './renderer.js';
 import { ParticleSystem } from './particles.js';
 import { Audio } from './audio.js';
 import { UI } from './ui.js';
@@ -97,9 +97,15 @@ export class Game {
 
     // Detect state changes for UI
     if (this.state !== this.previousState) {
-      if (this.state === State.LEVEL_COMPLETE) { this.ui.showLevelComplete(); this.audio.playLevelComplete(); }
+      if (this.state === State.LEVEL_COMPLETE) {
+        this.ui.showLevelComplete(); this.audio.playLevelComplete();
+        this.particles.emitLevelComplete(this.canvas.width / 2, this.canvas.height / 2);
+      }
       if (this.state === State.GAME_OVER) { this.ui.showGameOver(); this.audio.playGameOver(); }
-      if (this.state === State.VICTORY) { this.ui.showVictory(); this.audio.playVictory(); }
+      if (this.state === State.VICTORY) {
+        this.ui.showVictory(); this.audio.playVictory();
+        this.particles.emitLevelComplete(this.canvas.width / 2, this.canvas.height / 2);
+      }
       this.previousState = this.state;
     }
 
@@ -189,6 +195,11 @@ export class Game {
         this.state = State.PLAYING;
       }
     }
+
+    // Always update particles (for level complete / victory effects)
+    if (this.state !== State.PLAYING) {
+      this.particles.update(dt);
+    }
   }
 
   spawnEnemy(speed) {
@@ -211,9 +222,7 @@ export class Game {
     const ctx = this.ctx;
     ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
 
-    ctx.fillStyle = '#1a1a2e';
-    ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
-
+    drawBackground(ctx, this.canvas);
     drawArena(ctx, this);
 
     for (const enemy of this.enemies) {

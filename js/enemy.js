@@ -86,51 +86,138 @@ export class Enemy {
 
     if (this.state === EnemyState.FLUNG) {
       ctx.globalAlpha = Math.max(0, this.flungAlpha);
+      // Spin when flung
+      ctx.translate(this.x, this.y);
+      ctx.rotate(this.flungTimer * 15);
+    } else {
+      ctx.translate(this.x, this.y);
     }
 
-    ctx.translate(this.x, this.y);
+    const r = this.radius;
+    const t = performance.now();
 
-    // Body circle
-    ctx.fillStyle = this.variant.bodyColor;
+    // Wobble animation when approaching
+    if (this.state === EnemyState.APPROACHING) {
+      const wobble = Math.sin(t * 0.008 + this.mountAngle * 10) * 0.1;
+      ctx.rotate(wobble);
+    }
+
+    // Shadow
+    ctx.fillStyle = 'rgba(0,0,0,0.2)';
     ctx.beginPath();
-    ctx.arc(0, 0, this.radius, 0, Math.PI * 2);
+    ctx.ellipse(0, r + 2, r * 0.8, 3, 0, 0, Math.PI * 2);
     ctx.fill();
 
-    // Accent (headband/feature)
-    ctx.fillStyle = this.variant.accentColor;
-    ctx.beginPath();
-    ctx.arc(0, -2, this.radius * 0.5, 0, Math.PI * 2);
-    ctx.fill();
-
-    // Eyes
-    ctx.fillStyle = '#ffffff';
-    ctx.beginPath();
-    ctx.arc(-4, -3, 3, 0, Math.PI * 2);
-    ctx.arc(4, -3, 3, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.fillStyle = '#000000';
-    ctx.beginPath();
-    ctx.arc(-4, -3, 1.5, 0, Math.PI * 2);
-    ctx.arc(4, -3, 1.5, 0, Math.PI * 2);
-    ctx.fill();
-
-    // Grabbing indicator - pulsing outline
+    // Grabbing glow ring
     if (this.state === EnemyState.GRABBING) {
+      const pulseR = r + 5 + Math.sin(t * 0.01) * 3;
+      const glow = ctx.createRadialGradient(0, 0, r, 0, 0, pulseR + 4);
+      glow.addColorStop(0, 'rgba(255,204,0,0.4)');
+      glow.addColorStop(1, 'rgba(255,204,0,0)');
+      ctx.fillStyle = glow;
+      ctx.beginPath();
+      ctx.arc(0, 0, pulseR + 4, 0, Math.PI * 2);
+      ctx.fill();
+
       ctx.strokeStyle = '#ffcc00';
       ctx.lineWidth = 2;
+      ctx.setLineDash([4, 4]);
+      ctx.lineDashOffset = -t * 0.02;
       ctx.beginPath();
-      ctx.arc(0, 0, this.radius + 3 + Math.sin(performance.now() * 0.01) * 2, 0, Math.PI * 2);
+      ctx.arc(0, 0, pulseR, 0, Math.PI * 2);
       ctx.stroke();
+      ctx.setLineDash([]);
     }
 
-    // Mounted indicator
+    // Mounted danger glow
     if (this.state === EnemyState.MOUNTED) {
-      ctx.strokeStyle = '#ff0000';
-      ctx.lineWidth = 2;
+      const glow = ctx.createRadialGradient(0, 0, r * 0.5, 0, 0, r + 6);
+      glow.addColorStop(0, 'rgba(255,50,50,0.3)');
+      glow.addColorStop(1, 'rgba(255,50,50,0)');
+      ctx.fillStyle = glow;
       ctx.beginPath();
-      ctx.arc(0, 0, this.radius + 2, 0, Math.PI * 2);
-      ctx.stroke();
+      ctx.arc(0, 0, r + 6, 0, Math.PI * 2);
+      ctx.fill();
     }
+
+    // Body with gradient
+    const bodyGrad = ctx.createRadialGradient(-r * 0.3, -r * 0.3, 0, 0, 0, r);
+    bodyGrad.addColorStop(0, this.variant.accentColor);
+    bodyGrad.addColorStop(0.4, this.variant.bodyColor);
+    bodyGrad.addColorStop(1, this.variant.bodyColor);
+    ctx.fillStyle = bodyGrad;
+    ctx.beginPath();
+    ctx.arc(0, 0, r, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Body outline
+    ctx.strokeStyle = 'rgba(0,0,0,0.2)';
+    ctx.lineWidth = 1.5;
+    ctx.beginPath();
+    ctx.arc(0, 0, r, 0, Math.PI * 2);
+    ctx.stroke();
+
+    // Headband / accent stripe
+    ctx.fillStyle = this.variant.accentColor;
+    ctx.beginPath();
+    ctx.arc(0, -r * 0.15, r * 0.9, -Math.PI * 0.85, -Math.PI * 0.15);
+    ctx.lineTo(r * 0.65, -r * 0.05);
+    ctx.arc(0, -r * 0.15, r * 0.55, -Math.PI * 0.15, -Math.PI * 0.85, true);
+    ctx.closePath();
+    ctx.fill();
+
+    // Eyes - white with shine
+    const eyeY = -r * 0.15;
+    const eyeSpread = r * 0.3;
+    for (const ex of [-eyeSpread, eyeSpread]) {
+      // White
+      ctx.fillStyle = '#fff';
+      ctx.beginPath();
+      ctx.ellipse(ex, eyeY, 3.5, 4, 0, 0, Math.PI * 2);
+      ctx.fill();
+      // Pupil
+      ctx.fillStyle = '#111';
+      ctx.beginPath();
+      ctx.arc(ex + 0.5, eyeY + 0.5, 2, 0, Math.PI * 2);
+      ctx.fill();
+      // Shine
+      ctx.fillStyle = '#fff';
+      ctx.beginPath();
+      ctx.arc(ex + 1.2, eyeY - 1, 0.8, 0, Math.PI * 2);
+      ctx.fill();
+    }
+
+    // Mouth - angry for approaching, determined for grabbing
+    if (this.state === EnemyState.APPROACHING) {
+      // Determined grin
+      ctx.strokeStyle = '#fff';
+      ctx.lineWidth = 1.5;
+      ctx.beginPath();
+      ctx.arc(0, r * 0.05, r * 0.3, 0.1, Math.PI - 0.1);
+      ctx.stroke();
+    } else if (this.state === EnemyState.GRABBING) {
+      // Mischievous grin
+      ctx.fillStyle = '#fff';
+      ctx.beginPath();
+      ctx.arc(0, r * 0.1, r * 0.25, 0, Math.PI);
+      ctx.fill();
+    } else if (this.state === EnemyState.MOUNTED) {
+      // Victorious smile
+      ctx.fillStyle = '#fff';
+      ctx.beginPath();
+      ctx.arc(0, r * 0.05, r * 0.3, 0, Math.PI);
+      ctx.fill();
+      ctx.fillStyle = '#ff6b6b';
+      ctx.beginPath();
+      ctx.arc(0, r * 0.05, r * 0.2, 0, Math.PI);
+      ctx.fill();
+    }
+
+    // Shine highlight on body
+    ctx.fillStyle = 'rgba(255,255,255,0.15)';
+    ctx.beginPath();
+    ctx.ellipse(-r * 0.25, -r * 0.35, r * 0.35, r * 0.25, -0.4, 0, Math.PI * 2);
+    ctx.fill();
 
     ctx.restore();
   }
